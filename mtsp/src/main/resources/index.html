@@ -1,0 +1,113 @@
+<div style="text-align: center">
+
+<h1>MTSP</h1>
+<div class="chart-container" style="text-align: center; display: flex; align-items: center; justify-content: center">
+    <div style="display: flex; flex-direction: row; border: 1px solid lightgray; border-radius: 10px; padding: 10px">
+        <div>
+            <canvas id="plot" style="width: 500px; height: 500px"></canvas>
+        </div>
+        <div>
+            <canvas id="fitness-plot" style="width: 500px; height: 300px"></canvas>
+            <p><strong>Best Route Length:</strong> <span id="fitness"></span></p>
+        </div>
+    </div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+
+    const borderColors = ['red', 'blue', 'green', 'pink'];
+
+    function emptyDataset(label, color) {
+        return {
+            data: [],
+            label,
+            borderColor: color,
+            borderWidth: 1,
+            fill: true,
+            tension: 0,
+            showLine: true
+       }
+    }
+
+    var chart = new Chart(document.querySelector('#plot'), {
+        type: 'scatter',
+        data: { datasets: [] },
+        options: {
+            legend: false,
+            tooltips: false,
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero:true
+                    }
+                }]
+                },
+                scales: {
+                        yAxes : [{
+                            ticks : {
+                                max : 30,
+                                min : -30
+                            }
+                        }],
+                        xAxes : [{
+                            ticks : {
+                                max : 30,
+                                min : -30
+                            }
+                        }]
+                    }
+        }
+    });
+
+    const fitnessChart = new Chart(document.querySelector('#fitness-plot'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Fitness across iterations',
+                data: [],
+                fill: false,
+                borderWidth: 2,
+                borderColor: 'rgb(75, 192, 192)',
+                //tension: 0.1
+            }]
+        },
+        options: {
+                elements: {
+                    point:{
+                        radius: 0
+                    }
+                }
+            }
+    });
+
+    const salesmen = 3;
+    const cities = 80;
+    const maxCities = 80;
+    const minCities = 1;
+    chart.data.datasets = [...Array(salesmen).keys()].map((i) => {
+        console.log(i);
+        return emptyDataset(`Salesman ${i + 1}`, borderColors[i]);
+    });
+    const ws = new WebSocket(`ws://localhost:7000/mtsp-from-scratch?salesmen=${salesmen}&cities=${cities}&maxCities=${maxCities}&minCities=${minCities}`);
+    let iter = 0;
+    ws.onmessage = function(e) {
+        const res = JSON.parse(e.data);
+        console.log(res);
+        let offset = 0;
+        for(let i = 0; i < salesmen; i++) {
+            chart.data.datasets[i].data = res.datasets[i];
+        }
+        chart.update();
+        fitnessChart.data.labels.push(iter++);
+        fitnessChart.data.datasets[0].data.push(res.fitness);
+        fitnessChart.update();
+        document.querySelector('#fitness').innerText = -res.fitness;
+    };
+
+
+
+</script>

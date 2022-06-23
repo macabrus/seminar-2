@@ -1,0 +1,11 @@
+for i in n_generations:
+    newPop = []
+    newPop.add(best(population)) // elitism
+    while newPop.size() < population.size():
+        p1, p2 = select(2, pop)
+        child  = crossover(p1, p2)
+        if uniform_rand(0, 1) < mutation_prob:
+            child = mutate(child)
+        newPop.add(child)
+    population = newPop
+
